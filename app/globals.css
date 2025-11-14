@@ -37,18 +37,26 @@ body {
 }
 
 .btn {
-  margin: 14px auto;
+  position: absolute;
+  bottom: 10px;
   text-decoration: none;
   border: 1px solid transparent;
-  border-radius: 12px;
-  position: relative;
+  border-radius: 5px;
   overflow: hidden;
   background-color: #FFFFFF00;
   font-weight: 500;
   transition: all 500ms cubic-bezier(0.075, 0.82, 0.165, 1);
-  width: 240px;
-  height: 226px;
-  transform: translateX(4px) translateY(36px);  
+  width: 238px;
+  height: 226px; 
+  background-color: #fff2; 
+}
+
+@media (max-width: 600px) {
+  .btn {
+    width: 192px;
+    margin-left: 4px;
+    height: 180px; 
+  }  
 }
 
 .btn:hover {

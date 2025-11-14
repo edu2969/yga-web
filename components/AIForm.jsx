@@ -1,26 +1,30 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { IoHardwareChipSharp } from "react-icons/io5"
+import { IoHardwareChipSharp } from "react-icons/io5";
+import MatrixPrompt from "./prompt/MatrixPrompt";
 
 export default function AIForm() {
   const onError = (errors, e) => console.log(errors, e)
   const [position, setPosition] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showBackground, setShowBackground] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
 
-  const {
-    register,
-    formState: {
-      errors
-    },
-    handleSubmit,
-  } = useForm();
+  const methods = useForm();
+  const { handleSubmit } = methods;
   const [error, setError] = useState("");
+  // isPromptFocused now handled inside MatrixPrompt
 
   const onSubmitIA = async (data) => {
-    setError(false);
+    if (!data.prompt || data.prompt.trim() === "") {
+      setError("Por favor, describe tu pregunta.");
+      return;
+    }
+    setError("");
     setPosition(1);
     animateMarcoInformativo();
   }
@@ -31,6 +35,7 @@ export default function AIForm() {
       // Restaurar z-index y pointer events al mostrar
       marco.style.zIndex = "10";
       marco.style.pointerEvents = "auto";
+      marco.style.visibility = "visible";
       
       marco.animate([
         { bottom: "-100%", opacity: "0" },
@@ -100,9 +105,28 @@ export default function AIForm() {
       animation.onfinish = () => {
         marco.style.zIndex = "-1";
         marco.style.pointerEvents = "none";
+        marco.style.visibility = "hidden";
       };
     }
   }
+
+  // Secuencia de carga inicial
+  useEffect(() => {
+    const loadingSequence = async () => {
+      // Paso 1: Mostrar loader por 2 segundos
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setIsLoading(false);
+      
+      // Paso 2: Fade in del fondo
+      setShowBackground(true);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Paso 3: Animación del marco-prompt desde arriba
+      setShowPrompt(true);
+    };
+    
+    loadingSequence();
+  }, []);
 
   // Animar cuando cambie la posición
   useEffect(() => {
@@ -130,20 +154,45 @@ export default function AIForm() {
     transitionToNewContent(newPosition);
   }
 
+  const isMobile = () => {
+    return typeof window !== 'undefined' && window.innerWidth < 640;
+  }
+
   // Generar clases dinámicas para el background
   const getBackgroundClasses = () => {
     const opacity = position > 0 ? "opacity-30" : "opacity-100";
     const baseClasses = `absolute w-full h-screen bg-no-repeat transition-all duration-700 ease-out ${opacity}`;
-
-    switch (position) {
-      case 1:
-        return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:200%] bg-[position:1%_100%]`;
-      case 2:
-        return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:200%] bg-[position:50%_100%]`;
-      case 3:
-        return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:200%] bg-[position:99%_100%]`;
-      default:
-        return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:200%] bg-[position:50%_15%]`;
+    // Mobile: vertical navigation, desktop: horizontal navigation
+    const isMobileDevice = isMobile();
+    if (isMobileDevice) {
+      // Ajusta para móvil: vertical navigation, usando 200% del alto para simular columnas
+      let posY = '15%';
+      switch (position) {
+        case 1:
+          posY = '15%';
+          break;
+        case 2:
+          posY = '50%';
+          break;
+        case 3:
+          posY = '99%';
+          break;
+        default:
+          posY = '15%';
+      }
+      return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:auto_160%] bg-[position:50%_${posY}]`;
+    } else {
+      // Desktop: horizontal navigation
+      switch (position) {
+        case 1:
+          return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:200%] bg-[position:0%_100%]`;
+        case 2:
+          return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:200%] bg-[position:50%_100%]`;
+        case 3:
+          return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:200%] bg-[position:99%_100%]`;
+        default:
+          return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:200%] bg-[position:50%_15%]`;
+      }
     }
   }
 
@@ -159,57 +208,62 @@ export default function AIForm() {
       case 3:
         return `${baseClasses} bg-[url('/conectores-yga.svg')] bg-[length:200%] bg-[position:99%_100%]`;
       default:
-        return `${baseClasses} bg-[url('/conectores-yga.jpg')] bg-[length:200%] bg-[position:50%_15%]`;
+        return `${baseClasses} bg-[url('/conectores-yga.svg')] bg-[length:200%] bg-[position:50%_15%]`;
     }
   }
 
   return (
     <main className="absolute w-full h-screen top-0 left-0 overflow-hidden">
-      <div className={getBackgroundClasses()}>
+      {/* Loader */}
+      {isLoading && (
+        <div className="absolute w-full h-screen bg-black flex items-center justify-center z-50">
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <div className="font-michroma neon text-lg">INICIANDO SISTEMA...</div>
+          </div>
+        </div>
+      )}
+      
+      {/* Background con fade-in */}
+      <div className={`${getBackgroundClasses()} ${showBackground ? 'opacity-100' : 'opacity-0'} transition-opacity duration-800`}>
         <div className={getConectorsClasses()}></div>
       </div>
-      <div id="marco-prompt" className={`flex flex-col items-center justify-center transition-all duration-500 ease-out ${position == 0 ? 'absolute w-full text-center transform translate-y-[2%]' : 'transform translate-y-[-100%]'}`}>
-        <div className="font-michroma neon text-4xl text-center my-4 sm:mb-6">¿QUÉ BUSCAS?</div>
-        <div className="flex justify-center items-center font-michroma neon sm:text-lg md:text-xl font-medium leading-6 text-gray-400 px-4">
-          <span className="text-center tracking-wide max-w-2xl">Estás aquí por una pregunta <br />¿Cuál es esa pregunta?. <br />Escríbela y presiona el chip </span>
+      
+      {/* Overlay negro que se desvanece */}
+      <div className={`absolute w-full h-screen bg-black transition-opacity duration-800 ${showBackground ? 'opacity-0 pointer-events-none' : 'opacity-100'} z-10`}></div>
+      
+      <div id="marco-prompt" className={`flex flex-col items-center justify-center transition-all duration-700 ease-out ${!showPrompt ? 'transform -translate-y-full opacity-0' : position == 0 ? 'absolute w-full text-center transform translate-y-[2%] opacity-100' : 'transform translate-y-[-100%] opacity-100'}`}>
+        <div className="bg-black/50 py-4 px-6 rounded-lg">
+          <div className="font-michroma neon text-2xl md:text-4xl text-center sm:mb-6">¿Qué buscas?</div>
+          <div className="flex justify-center items-center font-michroma neon text-sm sm:text-lg md:text-xl font-medium leading-6 text-gray-400 px-4">
+            <span className="text-center tracking-wide max-w-2xl">Es una pregunta <br />¿Cuál es esa pregunta?. <br />Escríbela y presiona el chip</span>
+          </div>
         </div>
-        <form className="mt-4 sm:mt-8 w-full mx-auto px-4" onSubmit={handleSubmit(onSubmitIA, onError)}>
-          <div className="space-y-4 sm:space-y-8">
-            <div className="flex justify-center">
-              <div className="w-full max-w-2xl">
-                {errors.prompt && <p className="text-red-500 text-center mb-4 text-sm sm:text-base">Descripción requerida</p>}
-                <div className="matrix-terminal-container mx-4 sm:mx-8 md:mx-12">
-                  <div className="matrix-terminal-frame">
-                    <div className="terminal-header">
-                      <div className="terminal-dots">
-                        <span className="dot red"></span>
-                        <span className="dot yellow"></span>
-                        <span className="dot green"></span>
-                      </div>
-                      <span className="terminal-title">NEURAL_INTERFACE_v2.1</span>
-                    </div>
-                    <textarea {...register("prompt", { required: true })}
-                      id="prompt" name="prompt" type="text" required
-                      rows={3}
-                      placeholder="> Toc Toc..._"
-                      className="matrix-textarea" />
-                  </div>
+        <FormProvider {...methods}>
+          <form className="mt-0 sm:mt-8 w-full mx-auto px-4" onSubmit={handleSubmit(onSubmitIA, onError)}>
+            <div className="space-y-4 sm:space-y-8">
+              <div className="flex justify-center">
+                <div className="w-full max-w-2xl">
+                  <MatrixPrompt error={error} setError={setError} />
                 </div>
               </div>
+              {/* El error ahora aparece dentro del textarea como tercera línea */}
+              <button type="submit" id="btn-hidden-send"/>              
             </div>
-            {error && <div className="text-center"><span className="text-red-500 text-sm sm:text-base">{error}</span></div>}
-            <div className="flex justify-center">
-              <button type="submit" id="btnSend" className={`btn ${position === 0 ? 'block' : 'hidden'}`} />
-            </div>
-          </div>
-        </form>
+          </form>
+        </FormProvider>
       </div>
 
+      <div className={`w-full absolute`} style={{ bottom: isMobile() ? '14%' : '5%', height: isMobile() ? '360px' : '240px'  }}>
+        <div className="w-full flex flex-col items-center" style={{ height: isMobile() ? '360px' : '240px'  }}>
+          <button
+            className={`btn ${position === 0 ? 'block' : 'hidden'}`}
+            onClick={() => document.getElementById('btn-hidden-send').click()}
+          />
+        </div>        
+      </div>
 
-
-
-
-      <div id="marco-informativo" className="absolute block w-full marco-informativo py-8 sm:py-10 md:py-12 lg:py-16 px-12 sm:px-16 md:px-20 lg:px-32 -bottom-full">
+      <div id="marco-informativo" className={`absolute w-full marco-informativo py-8 sm:py-10 md:py-12 lg:py-16 px-12 sm:px-16 md:px-20 lg:px-32 -bottom-full transition-opacity duration-300 ${position === 0 ? 'opacity-0 invisible pointer-events-none' : 'opacity-100 visible pointer-events-auto'}`}>
         <div className="flex flex-col md:flex-row w-full gap-6 md:gap-6 lg:gap-8 items-center">
           <div className="w-full md:w-1/3 flex justify-center">
             <div className="w-[220px] h-[220px] sm:w-[260px] sm:h-[260px] md:w-[280px] md:h-[280px] lg:w-[320px] lg:h-[320px] overflow-hidden rounded-lg shadow-2xl">
@@ -274,6 +328,13 @@ export default function AIForm() {
           <button className="btn-primary btn-cotizar text-sm sm:text-base md:text-lg lg:text-xl px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4">COTIZAR</button>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes matrix-glitch {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </main>
   );
 }
