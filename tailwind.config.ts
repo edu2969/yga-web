@@ -5,27 +5,34 @@ const config: Config = {
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
-    './node_modules/flowbite/**/*.js',
-    './node_modules/react-tailwindcss-datepicker/dist/index.esm.js',
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'michroma': ['var(--font-michroma)', 'monospace'],
+      },
       keyframes: {
         entrance: {
-          '0%': { filter: 'opacity(0)', transform: "scale(0.1)" },
-          '100%': { filter: 'opacity(1)', transform: "scale(2)" },
+          '0%': { filter: 'opacity(0)', transform: 'scale(0.1)' },
+          '100%': { filter: 'opacity(1)', transform: 'scale(2)' },
         },
-        spin: {
-          'from': { transform: "rotate(0deg)" },
-          'to': { transform: "rotate(360deg)" },
-        }
+        blink: {
+          '0%, 50%': { opacity: '1' },
+          '51%, 100%': { opacity: '0.3' },
+        },
+        'circuit-glow': {
+          '0%': { opacity: '0.5' },
+          '100%': { opacity: '1' },
+        },
+      },
+      animation: {
+        'entrance': 'entrance 2s forwards',
+        'blink': 'blink 1.5s infinite',
+        'circuit-glow': 'circuit-glow 3s ease-in-out infinite alternate',
       },
     },
-    animation: {
-      'entrance': 'entrance 2s forwards',
-      'spin': 'spin 1s linear infinite',
-    },  
   },
   plugins: [],
 }
+
 export default config

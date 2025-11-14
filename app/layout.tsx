@@ -1,27 +1,30 @@
-import { Inter } from 'next/font/google'
+import React from 'react'
+import { Inter, Michroma } from 'next/font/google'
 import type { Metadata } from 'next'
 import './globals.css'
-import Nav from '@/components/Nav'
-import { getServerSession } from 'next-auth'
-import { authOptions } from './api/auth/[...nextauth]/route'
+import './matrix-styles.css'
+
 const inter = Inter({ subsets: ['latin'] })
+const michroma = Michroma({ 
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-michroma'
+})
 
 export const metadata: Metadata = {
-  title: 'Ocustocus',
-  description: 'by Eduardo Troncoso',
+  title: 'yGa',
+  description: 'Tecnologías al alcance',
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children
 }: {
   children: React.ReactNode
 }) {
-  const session = await getServerSession(authOptions);
   return (    
     <html lang="en">      
-      <body className={inter.className}>      
+      <body className={`${inter.className} ${michroma.variable}`}>      
         {children}
-        <Nav user={session?.user}></Nav>      
       </body>
     </html>
   )
