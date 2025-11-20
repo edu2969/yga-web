@@ -20,11 +20,6 @@ export default function AIForm() {
   // isPromptFocused now handled inside MatrixPrompt
 
   const onSubmitIA = async (data) => {
-    if (!data.prompt || data.prompt.trim() === "") {
-      setError("Por favor, describe tu pregunta.");
-      return;
-    }
-    setError("");
     setPosition(1);
     animateMarcoInformativo();
   }
@@ -158,43 +153,37 @@ export default function AIForm() {
     return typeof window !== 'undefined' && window.innerWidth < 640;
   }
 
-  // Generar clases dinámicas para el background
-  const getBackgroundClasses = () => {
-    const opacity = position > 0 ? "opacity-30" : "opacity-100";
-    const baseClasses = `absolute w-full h-screen bg-no-repeat transition-all duration-700 ease-out ${opacity}`;
-    // Mobile: vertical navigation, desktop: horizontal navigation
-    const isMobileDevice = isMobile();
-    if (isMobileDevice) {
-      // Ajusta para móvil: vertical navigation, usando 200% del alto para simular columnas
-      let posY = '15%';
-      switch (position) {
-        case 1:
-          posY = '15%';
-          break;
-        case 2:
-          posY = '50%';
-          break;
-        case 3:
-          posY = '99%';
-          break;
-        default:
-          posY = '15%';
-      }
-      return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:auto_160%] bg-[position:50%_${posY}]`;
-    } else {
-      // Desktop: horizontal navigation
-      switch (position) {
-        case 1:
-          return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:200%] bg-[position:0%_100%]`;
-        case 2:
-          return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:200%] bg-[position:50%_100%]`;
-        case 3:
-          return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:200%] bg-[position:99%_100%]`;
-        default:
-          return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:200%] bg-[position:50%_15%]`;
-      }
+const getBackgroundClasses = () => {
+  const opacity = position > 0 ? "opacity-30" : "opacity-100";
+  const baseClasses = `absolute w-full h-screen bg-no-repeat transition-all duration-700 ease-out ${opacity}`;
+  const isMobileDevice = isMobile();
+  
+  if (isMobileDevice) {
+    return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:auto_160%]`;
+  } else {
+    return `${baseClasses} bg-[url('/backgroud-yga.png')] bg-[length:200%]`;
+  }
+};
+
+const getBackgroundPosition = () => {
+  const isMobileDevice = isMobile();
+  
+  if (isMobileDevice) {
+    switch (position) {
+      case 1: return '50% 15%';
+      case 2: return '50% 50%';
+      case 3: return '50% 99%';
+      default: return '50% 15%';
+    }
+  } else {
+    switch (position) {
+      case 1: return '0% 100%';
+      case 2: return '50% 100%';
+      case 3: return '99% 100%';
+      default: return '50% 19%';
     }
   }
+};
 
   const getConectorsClasses = () => {
     const opacity = position > 0 ? "opacity-20" : "opacity-100";
@@ -225,7 +214,7 @@ export default function AIForm() {
       )}
       
       {/* Background con fade-in */}
-      <div className={`${getBackgroundClasses()} ${showBackground ? 'opacity-100' : 'opacity-0'} transition-opacity duration-800`}>
+      <div className={getBackgroundClasses()} style={{ backgroundPosition: getBackgroundPosition() }}>
         <div className={getConectorsClasses()}></div>
       </div>
       
@@ -240,7 +229,7 @@ export default function AIForm() {
           </div>
         </div>
         <FormProvider {...methods}>
-          <form className="mt-0 sm:mt-8 w-full mx-auto px-4" onSubmit={handleSubmit(onSubmitIA, onError)}>
+          <form className="mt-0 sm:mt-0 w-full mx-auto px-4" onSubmit={handleSubmit(onSubmitIA, onError)}>
             <div className="space-y-4 sm:space-y-8">
               <div className="flex justify-center">
                 <div className="w-full max-w-2xl">
@@ -254,8 +243,8 @@ export default function AIForm() {
         </FormProvider>
       </div>
 
-      <div className={`w-full absolute`} style={{ bottom: isMobile() ? '14%' : '5%', height: isMobile() ? '360px' : '240px'  }}>
-        <div className="w-full flex flex-col items-center" style={{ height: isMobile() ? '360px' : '240px'  }}>
+      <div className={`w-full absolute ml-1`} style={{ bottom: isMobile() ? '14%' : '5%', height: isMobile() ? '358px' : '240px'  }}>
+        <div className="w-full flex flex-col items-center" style={{ height: isMobile() ? '358px' : '240px'  }}>
           <button
             className={`btn ${position === 0 ? 'block' : 'hidden'}`}
             onClick={() => document.getElementById('btn-hidden-send').click()}
@@ -264,10 +253,10 @@ export default function AIForm() {
       </div>
 
       <div id="marco-informativo" className={`absolute w-full marco-informativo py-8 sm:py-10 md:py-12 lg:py-16 px-12 sm:px-16 md:px-20 lg:px-32 -bottom-full transition-opacity duration-300 ${position === 0 ? 'opacity-0 invisible pointer-events-none' : 'opacity-100 visible pointer-events-auto'}`}>
-        <div className="flex flex-col md:flex-row w-full gap-6 md:gap-6 lg:gap-8 items-center">
+        <div className="flex flex-col md:flex-row w-full gap-6 md:gap-6 lg:gap-8 items-center pl-16 pr-8">
           <div className="w-full md:w-1/3 flex justify-center">
             <div className="w-[220px] h-[220px] sm:w-[260px] sm:h-[260px] md:w-[280px] md:h-[280px] lg:w-[320px] lg:h-[320px] overflow-hidden rounded-lg shadow-2xl">
-              <Image width={400} height={400} className="w-full h-full object-cover" src="/brand.png" alt="cuadro_01" />
+              <Image width={400} height={400} className="w-full h-full object-cover" src={`${position == 0 ? '/interference.gif' : `/brand_${position}.png`}`} alt="cuadro_01" />
             </div>
           </div>
           <div className="w-full md:w-2/3 text-white px-6 md:px-8 lg:px-12">

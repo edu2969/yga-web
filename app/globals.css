@@ -38,17 +38,15 @@ body {
 
 .btn {
   position: absolute;
-  bottom: 10px;
+  bottom: 9px;
   text-decoration: none;
   border: 1px solid transparent;
   border-radius: 5px;
   overflow: hidden;
-  background-color: #FFFFFF00;
   font-weight: 500;
   transition: all 500ms cubic-bezier(0.075, 0.82, 0.165, 1);
-  width: 238px;
-  height: 226px; 
-  background-color: #fff2; 
+  width: 234px;
+  height: 224px;
 }
 
 @media (max-width: 600px) {
