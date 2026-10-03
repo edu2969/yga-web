@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 
-export default function MatrixPrompt({ error, setError }) {
+export default function MatrixPrompt({ error, setError, onQuickPromptSelected }) {
   const [lines, setLines] = useState([{ type: "user", text: "> ", editable: true }]); // Inicia con línea editable con espacio
   const [processing, setProcessing] = useState(false);
   const maxLines = 8; // Máximo de líneas visibles
   const intervalRef = useRef(null);
+  const presetIntervalRef = useRef(null);
   const scrollRef = useRef(null); // Ref para el contenedor de scroll
   const editableRef = useRef(null); // Ref para la línea editable actual
+  const isTypingPresetRef = useRef(false);
+  const [isTypingPreset, setIsTypingPreset] = useState(false);
 
   // Scroll automático al bottom cuando cambien las líneas
   useEffect(() => {
@@ -28,6 +31,95 @@ export default function MatrixPrompt({ error, setError }) {
       sel.addRange(range);
     }
   }, [lines]); // Se ejecuta cada vez que lines cambie
+
+  useEffect(() => {
+    const focusPromptOnKey = (event) => {
+      if (isTypingPresetRef.current) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+
+      const editable = editableRef.current;
+      if (!editable || document.activeElement === editable) return;
+
+      editable.focus();
+
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+      if (event.key.length === 1) {
+        event.preventDefault();
+        setLines((prev) => {
+          const editableIndex = prev.map((line) => line.editable).lastIndexOf(true);
+          if (editableIndex === -1) return prev;
+
+          return prev.map((line, index) =>
+            index === editableIndex
+              ? { ...line, text: `${line.text}${event.key}` }
+              : line
+          );
+        });
+      } else if (event.key === "Backspace") {
+        event.preventDefault();
+        setLines((prev) => {
+          const editableIndex = prev.map((line) => line.editable).lastIndexOf(true);
+          if (editableIndex === -1) return prev;
+
+          return prev.map((line, index) =>
+            index === editableIndex
+              ? { ...line, text: line.text.length > 2 ? line.text.slice(0, -1) : "> " }
+              : line
+          );
+        });
+      }
+    };
+
+    window.addEventListener("keydown", focusPromptOnKey, true);
+    return () => window.removeEventListener("keydown", focusPromptOnKey, true);
+  }, []);
+
+  useEffect(() => () => {
+    clearInterval(presetIntervalRef.current);
+    isTypingPresetRef.current = false;
+  }, []);
+
+  const typePreset = (text) => {
+    if (processing || isTypingPresetRef.current) return;
+
+    const editableIndex = lines.map((line) => line.editable).lastIndexOf(true);
+    if (editableIndex === -1) return;
+
+    onQuickPromptSelected?.();
+    clearInterval(presetIntervalRef.current);
+    isTypingPresetRef.current = true;
+    setIsTypingPreset(true);
+    editableRef.current?.focus();
+    setLines((prev) => prev.map((line, index) =>
+      index === editableIndex ? { ...line, text: "> " } : line
+    ));
+
+    let index = 0;
+    presetIntervalRef.current = setInterval(() => {
+      if (index >= text.length) {
+        clearInterval(presetIntervalRef.current);
+        isTypingPresetRef.current = false;
+        setIsTypingPreset(false);
+        handleSend({ type: "user", text: `> ${text}`, editable: true });
+        return;
+      }
+
+      const nextText = `> ${text.slice(0, index + 1)}`;
+      setLines((prev) => {
+        const currentEditableIndex = prev.map((line) => line.editable).lastIndexOf(true);
+        if (currentEditableIndex === -1) return prev;
+
+        return prev.map((line, lineIndex) =>
+          lineIndex === currentEditableIndex ? { ...line, text: nextText } : line
+        );
+      });
+      index += 1;
+    }, 35);
+  };
 
   // Función para escribir la respuesta letra a letra
   const typeResponse = (fullText, isSuccess) => {
@@ -54,8 +146,8 @@ export default function MatrixPrompt({ error, setError }) {
   };
 
   // Maneja el envío (Enter en la línea editable)
-  const handleSend = async () => {
-    const currentLine = lines[lines.length - 1];
+  const handleSend = async (submittedLine = lines[lines.length - 1]) => {
+    const currentLine = submittedLine;
     if (!currentLine.text.trim() || currentLine.text === ">" || processing) return;
 
     setProcessing(true);
@@ -94,7 +186,24 @@ export default function MatrixPrompt({ error, setError }) {
   };
 
   return (
-    <div className="matrix-terminal-container mx-4 sm:mx-8 md:mx-12">
+    <div className="matrix-terminal-container mx-1 sm:mx-4 md:mx-8 lg:mx-12">
+      <div className="mb-3 flex flex-wrap justify-center gap-2">
+        {[
+          { label: "Quienes somos", prompt: "¿Quién es yGa Tecnologías?" },
+          { label: "Contacto", prompt: "¿Cómo me contacto con ustedes?" },
+          { label: "Portfolio", prompt: "Muéstrame qué trabajos han hecho" },
+        ].map(({ label, prompt }) => (
+          <button
+            key={label}
+            type="button"
+            className="rounded border border-cyan-400/70 bg-slate-950/80 px-3 py-1.5 font-michroma text-xs text-cyan-100 transition-colors hover:bg-cyan-950/80 disabled:cursor-wait disabled:opacity-60 sm:text-sm"
+            disabled={processing || isTypingPreset}
+            onClick={() => typePreset(prompt)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <div className="matrix-terminal-frame">
         <div className="terminal-header">
           <div className="terminal-dots">
