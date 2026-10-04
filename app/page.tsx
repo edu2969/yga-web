@@ -58,7 +58,7 @@ const quickPromptInfoSections = [
     ),
     titulo: "Tecnologías al alcance",
     texto:
-      "Experimente una solución para usted. Las soluciones de mercado son para todos.",
+      "Experimente una solución para usted y no una solución para el mercado. Consideramos y mejoramos como hace usted las cosas.",
   },
   {
     id: "who-we-are-3",
