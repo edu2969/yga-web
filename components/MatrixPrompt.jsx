@@ -1,15 +1,35 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 export default function MatrixPrompt({ error, setError, onQuickPromptSelected }) {
   const [lines, setLines] = useState([{ type: "user", text: "> ", editable: true }]); // Inicia con línea editable con espacio
   const [processing, setProcessing] = useState(false);
   const maxLines = 8; // Máximo de líneas visibles
-  const intervalRef = useRef(null);
-  const presetIntervalRef = useRef(null);
+  const responseTimeoutRef = useRef(null);
+  const presetTimeoutRef = useRef(null);
   const scrollRef = useRef(null); // Ref para el contenedor de scroll
   const editableRef = useRef(null); // Ref para la línea editable actual
+  const responseRef = useRef(null);
+  const draftTextRef = useRef("> ");
   const isTypingPresetRef = useRef(false);
   const [isTypingPreset, setIsTypingPreset] = useState(false);
+  const hasEditableLine = Boolean(lines[lines.length - 1]?.editable);
+  const getTypingDelay = () => 12 + Math.random() * 5;
+
+  const updateDraftText = useCallback((text, moveCaretToEnd = false) => {
+    draftTextRef.current = text;
+    const editable = editableRef.current;
+    if (!editable) return;
+
+    editable.textContent = text;
+    if (moveCaretToEnd) {
+      const range = document.createRange();
+      const selection = window.getSelection();
+      range.selectNodeContents(editable);
+      range.collapse(false);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+  }, []);
 
   // Scroll automático al bottom cuando cambien las líneas
   useEffect(() => {
@@ -18,19 +38,18 @@ export default function MatrixPrompt({ error, setError, onQuickPromptSelected })
     }
   }, [lines]);
 
-  // Enfoca la línea editable cuando cambie lines
+  // Enfoca el editor solo cuando aparece una nueva línea editable.
   useEffect(() => {
     if (editableRef.current) {
       editableRef.current.focus();
-      // Coloca el cursor al final del texto (después de "> ")
       const range = document.createRange();
       const sel = window.getSelection();
       range.selectNodeContents(editableRef.current);
-      range.collapse(false); // Al final
-      sel.removeAllRanges();
-      sel.addRange(range);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
     }
-  }, [lines]); // Se ejecuta cada vez que lines cambie
+  }, [hasEditableLine, lines.length]);
 
   useEffect(() => {
     const focusPromptOnKey = (event) => {
@@ -49,59 +68,44 @@ export default function MatrixPrompt({ error, setError, onQuickPromptSelected })
 
       if (event.key.length === 1) {
         event.preventDefault();
-        setLines((prev) => {
-          const editableIndex = prev.map((line) => line.editable).lastIndexOf(true);
-          if (editableIndex === -1) return prev;
-
-          return prev.map((line, index) =>
-            index === editableIndex
-              ? { ...line, text: `${line.text}${event.key}` }
-              : line
-          );
-        });
+        updateDraftText(`${draftTextRef.current}${event.key}`, true);
       } else if (event.key === "Backspace") {
         event.preventDefault();
-        setLines((prev) => {
-          const editableIndex = prev.map((line) => line.editable).lastIndexOf(true);
-          if (editableIndex === -1) return prev;
-
-          return prev.map((line, index) =>
-            index === editableIndex
-              ? { ...line, text: line.text.length > 2 ? line.text.slice(0, -1) : "> " }
-              : line
-          );
-        });
+        updateDraftText(
+          draftTextRef.current.length > 2
+            ? draftTextRef.current.slice(0, -1)
+            : "> ",
+          true,
+        );
       }
     };
 
     window.addEventListener("keydown", focusPromptOnKey, true);
     return () => window.removeEventListener("keydown", focusPromptOnKey, true);
-  }, []);
+  }, [updateDraftText]);
 
   useEffect(() => () => {
-    clearInterval(presetIntervalRef.current);
+    clearTimeout(presetTimeoutRef.current);
+    clearTimeout(responseTimeoutRef.current);
     isTypingPresetRef.current = false;
   }, []);
 
   const typePreset = (text) => {
     if (processing || isTypingPresetRef.current) return;
 
-    const editableIndex = lines.map((line) => line.editable).lastIndexOf(true);
-    if (editableIndex === -1) return;
+    if (!editableRef.current) return;
 
     onQuickPromptSelected?.();
-    clearInterval(presetIntervalRef.current);
+    clearTimeout(presetTimeoutRef.current);
     isTypingPresetRef.current = true;
     setIsTypingPreset(true);
     editableRef.current?.focus();
-    setLines((prev) => prev.map((line, index) =>
-      index === editableIndex ? { ...line, text: "> " } : line
-    ));
+    updateDraftText("> ");
 
     let index = 0;
-    presetIntervalRef.current = setInterval(() => {
+    const typeNextCharacter = () => {
       if (index >= text.length) {
-        clearInterval(presetIntervalRef.current);
+        clearTimeout(presetTimeoutRef.current);
         isTypingPresetRef.current = false;
         setIsTypingPreset(false);
         handleSend({ type: "user", text: `> ${text}`, editable: true });
@@ -109,40 +113,48 @@ export default function MatrixPrompt({ error, setError, onQuickPromptSelected })
       }
 
       const nextText = `> ${text.slice(0, index + 1)}`;
-      setLines((prev) => {
-        const currentEditableIndex = prev.map((line) => line.editable).lastIndexOf(true);
-        if (currentEditableIndex === -1) return prev;
-
-        return prev.map((line, lineIndex) =>
-          lineIndex === currentEditableIndex ? { ...line, text: nextText } : line
-        );
-      });
+      updateDraftText(nextText);
       index += 1;
-    }, 35);
+      presetTimeoutRef.current = setTimeout(
+        typeNextCharacter,
+        getTypingDelay(),
+      );
+    };
+    presetTimeoutRef.current = setTimeout(
+      typeNextCharacter,
+      getTypingDelay(),
+    );
   };
 
   // Función para escribir la respuesta letra a letra
-  const typeResponse = (fullText, isSuccess) => {
-    let currentText = "";
+  const typeResponse = (fullText) => {
     let index = 0;
-    intervalRef.current = setInterval(() => {
-      if (index < fullText.length) {
-        currentText += fullText[index];
-        setLines((prev) => [
-          ...prev.slice(0, -1), // Remueve la línea anterior (usuario)
-          { type: "response", text: `> ${currentText}` } // Actualiza la respuesta letra a letra en la nueva línea
-        ]);
-        index++;
-      } else {
-        clearInterval(intervalRef.current);
-        setProcessing(false);
-        // Agrega nueva línea editable después de la respuesta
-        setLines((prev) => [
-          ...prev,
-          { type: "user", text: "> ", editable: true }
-        ].slice(-maxLines));
+    const typeNextCharacter = () => {
+      index += 1;
+      if (responseRef.current) {
+        responseRef.current.textContent = `> ${fullText.slice(0, index)}`;
       }
-    }, 20); // Velocidad de escritura más rápida (20ms por letra)
+
+      if (index === fullText.length) {
+        setProcessing(false);
+        setLines((prev) => [
+          ...prev.slice(0, -1),
+          { type: "response", text: `> ${fullText}` },
+          { type: "user", text: "> ", editable: true },
+        ].slice(-maxLines));
+        draftTextRef.current = "> ";
+        return;
+      }
+
+      responseTimeoutRef.current = setTimeout(
+        typeNextCharacter,
+        getTypingDelay(),
+      );
+    };
+    responseTimeoutRef.current = setTimeout(
+      typeNextCharacter,
+      getTypingDelay(),
+    );
   };
 
   // Maneja el envío (Enter en la línea editable)
@@ -151,6 +163,7 @@ export default function MatrixPrompt({ error, setError, onQuickPromptSelected })
     if (!currentLine.text.trim() || currentLine.text === ">" || processing) return;
 
     setProcessing(true);
+    draftTextRef.current = "> ";
 
     // Congela la línea actual como usuario
     setLines((prev) => [
@@ -163,25 +176,31 @@ export default function MatrixPrompt({ error, setError, onQuickPromptSelected })
     setTimeout(() => {
       const isSuccess = Math.random() > 0.5;
       const responseText = isSuccess ? "Llegaste al lugar correcto. Presiona el chip" : "Entiendo. Te ayudaremos. Presiona el chip.";
-      typeResponse(responseText, isSuccess);
+      typeResponse(responseText);
     }, 500);
   };
 
   // Maneja cambios en la línea editable
-  const handleInputChange = (e, index) => {
-    const newText = e.target.textContent || "";
+  const handleInputChange = (e) => {
+    const newText = e.currentTarget.textContent || "";
     // Asegura que siempre empiece con "> "
     const textAfterPrompt = newText.startsWith("> ") ? newText.slice(2) : newText.startsWith(">") ? newText.slice(1) : newText;
-    setLines((prev) => prev.map((line, i) => 
-      i === index ? { ...line, text: "> " + textAfterPrompt } : line
-    ));
+    const normalizedText = `> ${textAfterPrompt}`;
+    draftTextRef.current = normalizedText;
+    if (newText !== normalizedText) {
+      updateDraftText(normalizedText);
+    }
   };
 
   // Maneja Enter en la línea editable
-  const handleKeyDown = (e, index) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleSend();
+      handleSend({
+        type: "user",
+        text: draftTextRef.current,
+        editable: true,
+      });
     }
   };
 
@@ -189,7 +208,7 @@ export default function MatrixPrompt({ error, setError, onQuickPromptSelected })
     <div className="matrix-terminal-container mx-1 sm:mx-4 md:mx-8 lg:mx-12">
       <div className="mb-3 flex flex-wrap justify-center gap-2">
         {[
-          { label: "Quienes somos", prompt: "¿Quién es yGa Tecnologías?" },
+          { label: "Quienes somos", prompt: "¿Qué es yGa?" },
           { label: "Contacto", prompt: "¿Cómo me contacto con ustedes?" },
           { label: "Portfolio", prompt: "Muéstrame qué trabajos han hecho" },
         ].map(({ label, prompt }) => (
@@ -229,13 +248,17 @@ export default function MatrixPrompt({ error, setError, onQuickPromptSelected })
                     suppressContentEditableWarning
                     className={`text-white focus:outline-none text-left ${processing ? 'cursor-not-allowed' : 'cursor-text'}`}
                     style={{ textIndent: '0px', marginLeft: '0px', whiteSpace: 'pre' }}  // Evita indentación
-                    onInput={(e) => handleInputChange(e, idx)}
+                    onInput={handleInputChange}
                     onKeyDown={(e) => handleKeyDown(e, idx)}
                   >
                     {line.text}
                   </div>
                 ) : (
-                  <pre className={`text-left ${line.type === "user" ? "text-white" : line.type === "response" ? "text-green-400" : "text-red-400"}`} style={{ textIndent: '0px', marginLeft: '0px' }}>
+                  <pre
+                    ref={line.type === "response" ? responseRef : undefined}
+                    className={`text-left ${line.type === "user" ? "text-white" : line.type === "response" ? "text-green-400" : "text-red-400"}`}
+                    style={{ textIndent: '0px', marginLeft: '0px' }}
+                  >
                     {line.text}
                   </pre>
                 )}

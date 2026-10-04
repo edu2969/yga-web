@@ -31,6 +31,9 @@ body {
 
 .ai-form-background {
   background-size: auto var(--ai-background-size-y);
+  background-position:
+    var(--ai-background-position, 50%)
+    var(--ai-background-y-position, 19%);
 }
 
 @media (max-width: 639px) {
@@ -41,6 +44,7 @@ body {
 
   .ai-form-background {
     background-size: auto var(--ai-background-size-y);
+    background-position: 50% var(--ai-background-mobile-position, 15%);
   }
 }
 
@@ -132,6 +136,148 @@ body {
   background-position: center;
 }
 
+.who-we-are-panel {
+  display: grid;
+  place-items: center;
+  width: min(96vw, 620px);
+  max-width: calc(100vw - 16px);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  background: url("/marco_002.png") center / contain no-repeat;
+  color: #fff;
+  text-align: center;
+}
+
+.who-we-are-content {
+  display: flex;
+  width: 76%;
+  max-width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0px, 1.5vw, 8px);
+  padding-block: 12%;
+  text-shadow: 0 0 8px rgba(97, 230, 255, 0.7);
+}
+
+.who-we-are-node {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.who-we-are-crystal {
+  flex: none;
+}
+
+.who-we-are-logo {
+  width: min(75%, 280px);
+  height: auto;
+  object-fit: contain;
+}
+
+.who-we-are-copy {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: clamp(0.75rem, 3.4vw, 1rem);
+  line-height: 1.5;
+}
+
+.who-we-are-copy h2 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1rem, 4.4vw, 1.5rem);
+  line-height: 1.2;
+}
+
+.who-we-are-copy p {
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .who-we-are-content {
+    width: 78%;
+  }
+}
+
+@media (max-width: 639px) {
+  .marco-informativo-panel {
+    bottom: calc(4rem + 62px + 4rem);
+  }
+
+  .carousel-cotizar {
+    bottom: 4rem;
+  }
+
+  .who-we-are-panel {
+    width: max(calc(100vw + 96px), 440px);
+    max-width: none;
+    height: min(620px, calc(100vh - 140px));
+    height: min(620px, calc(100svh - 140px));
+    aspect-ratio: auto;
+    background-size: auto 100%;
+  }
+
+  .who-we-are-panel.who-we-are-visible {
+    bottom: calc(50% + 30px);
+  }
+
+  .who-we-are-content {
+    width: min(calc(100vw - 40px), 380px);
+    justify-content: center;
+    gap: clamp(8px, 1.5vh, 14px);
+    padding: 0;
+    text-align: center;
+  }
+
+  .who-we-are-content > .who-we-are-node {
+    position: relative;
+    top: -30px;
+    width: clamp(160px, 48vw, 190px);
+    height: clamp(200px, 55vw, 230px);
+  }
+
+  .who-we-are-content > .who-we-are-node > .scene {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    top: auto;
+    transform: translateX(-50%) scale(1.05);
+    transform-origin: center bottom;
+  }
+
+  .who-we-are-content > .who-we-are-node > .who-we-are-logo {
+    position: absolute;
+    left: 50%;
+    bottom: clamp(45px, 13.3vw, 52px);
+    width: min(96vw, 420px);
+    max-width: none;
+    max-height: none;
+    transform: translateX(-50%);
+  }
+
+  .who-we-are-copy {
+    min-width: 0;
+    font-size: clamp(0.72rem, 3.3vw, 0.9rem);
+    line-height: 1.4;
+  }
+
+  .who-we-are-copy h2 {
+    font-size: clamp(0.95rem, 4vw, 1.25rem);
+  }
+
+  .who-we-are-copy p + p {
+    margin-top: 0.4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .who-we-are-crystal,
+  .who-we-are-crystal * {
+    animation: none !important;
+  }
+}
+
 .button-container {
   display: flex;
   justify-content: center;
@@ -202,10 +348,9 @@ a {
 
 /* ---------- Escena ---------- */
 .scene {
-  --h: 240px; /* sobrescrito por la prop `size` */
-  --r: calc(var(--h) * 0.36); /* radio circunscrito del pentágono */
-  --s: calc(var(--r) * 1.17557); /* lado = 2R·sin36° */
-  --a: calc(var(--r) * 0.80902); /* apotema = R·cos36° */
+  --edge: calc(var(--h) * 0.34);
+  --face-radius: calc(var(--edge) * 0.85065080835204);
+  --dodecahedron-apothem: calc(var(--edge) * 1.11351636441161);
 
   position: relative;
   display: inline-block;
@@ -216,176 +361,69 @@ a {
   pointer-events: none;
 }
 
-.layer {
-  position: absolute;
-  inset: 0;
+.dodecahedron,
+.seedWrap,
+.seed {
   transform-style: preserve-3d;
 }
 
-/* ---------- Movimiento global ---------- */
-.floating {
-  animation: float 6.5s ease-in-out infinite;
-}
-
-.tilt {
-  animation: wobble 9s ease-in-out infinite alternate;
-}
-
-.spin {
-  animation: spin 26s linear infinite;
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(calc(var(--h) * 0.025));
-  }
-  50% {
-    transform: translateY(calc(var(--h) * -0.035));
-  }
-}
-
-@keyframes wobble {
-  from {
-    transform: rotateX(-12deg) rotateZ(3deg);
-  }
-  to {
-    transform: rotateX(-20deg) rotateZ(7deg);
-  }
-}
-
-@keyframes spin {
-  from {
-    transform: rotateY(0deg);
-  }
-  to {
-    transform: rotateY(360deg);
-  }
-}
-
-/* ---------- Prisma ---------- */
-.prism {
+.dodecahedron {
   position: absolute;
   left: 50%;
   top: 50%;
   width: 0;
   height: 0;
-  transform-style: preserve-3d;
 }
 
-/* Caras laterales */
-.face {
+.spin {
+  animation: crystal-rotate 26s linear infinite;
+  will-change: transform;
+}
+
+@keyframes crystal-rotate {
+  from {
+    transform: rotateX(-16deg) rotateZ(5deg) rotateY(0deg);
+  }
+  to {
+    transform: rotateX(-16deg) rotateZ(5deg) rotateY(360deg);
+  }
+}
+
+.dodecahedronFace {
   position: absolute;
+  left: calc(var(--face-radius) * -1);
+  top: calc(var(--face-radius) * -1);
+  width: calc(var(--face-radius) * 2);
+  height: calc(var(--face-radius) * 2);
   box-sizing: border-box;
-  width: var(--s);
-  height: var(--h);
-  left: calc(var(--s) * -0.5);
-  top: calc(var(--h) * -0.5);
-  transform: rotateY(calc(var(--i) * 72deg)) translateZ(var(--a));
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  background:
-    linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.55) 0,
-      rgba(255, 255, 255, 0) 7%,
-      rgba(255, 255, 255, 0) 93%,
-      rgba(255, 255, 255, 0.4) 100%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.22) 0,
-      rgba(255, 255, 255, 0) 18%,
-      rgba(255, 255, 255, 0) 82%,
-      rgba(255, 255, 255, 0.18) 100%
-    ),
-    linear-gradient(
-      115deg,
-      hsla(calc(195 + var(--i) * 22), 95%, 82%, 0.2),
-      hsla(calc(260 + var(--i) * 10), 80%, 85%, 0.05) 55%,
-      hsla(calc(300 - var(--i) * 12), 90%, 85%, 0.14)
-    );
-  box-shadow: inset 0 0 calc(var(--h) * 0.1) rgba(255, 255, 255, 0.22);
-}
-
-/* Luz que cruza cada cara, escalonada entre caras */
-.face::after,
-.cap::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  clip-path: polygon(
+    50% 0,
+    97.5528% 34.5492%,
+    79.3893% 90.4508%,
+    20.6107% 90.4508%,
+    2.4472% 34.5492%
+  );
+  transform:
+    rotateY(var(--yaw))
+    rotateX(var(--pitch))
+    rotateZ(var(--roll))
+    translateZ(var(--dodecahedron-apothem));
   background: linear-gradient(
-    105deg,
-    transparent 38%,
-    rgba(255, 255, 255, 0) 42%,
-    rgba(255, 255, 255, 0.85) 50%,
-    rgba(255, 255, 255, 0) 58%,
-    transparent 62%
-  );
-  background-size: 300% 100%;
-  background-position: 130% 0;
-  animation: sweep 6s ease-in-out infinite;
-  animation-delay: calc(var(--i) * 0.45s);
-}
-
-@keyframes sweep {
-  0% {
-    background-position: 130% 0;
-    opacity: 0;
-  }
-  8% {
-    opacity: 1;
-  }
-  30%,
-  100% {
-    background-position: -30% 0;
-    opacity: 0;
-  }
-}
-
-/* Tapas pentagonales */
-.cap {
-  position: absolute;
-  width: calc(var(--r) * 1.90211);
-  height: calc(var(--r) * 1.80902);
-  left: calc(var(--r) * -0.951055);
-  top: calc(var(--r) * -1);
-  transform-origin: 50% var(--r); /* centro del pentágono = eje del prisma */
-  clip-path: polygon(50% 0, 100% 38.2%, 80.9% 100%, 19.1% 100%, 0 38.2%);
-  background: rgba(255, 255, 255, 0.55); /* borde luminoso */
-}
-
-.cap::before {
-  content: "";
-  position: absolute;
-  inset: 2px;
-  clip-path: polygon(50% 0, 100% 38.2%, 80.9% 100%, 19.1% 100%, 0 38.2%);
-  background: radial-gradient(
-    circle at 50% 55%,
-    rgba(255, 255, 255, 0.4),
-    rgba(170, 225, 255, 0.1) 55%,
-    rgba(255, 255, 255, 0.22) 100%
+    145deg,
+    rgba(239, 250, 255, 0.2),
+    rgba(142, 199, 229, 0.08) 54%,
+    rgba(255, 255, 255, 0.16)
   );
 }
 
-.capTop {
-  transform: translateY(calc(var(--h) * -0.5)) rotateX(90deg) rotateZ(36deg);
-}
-
-.capBottom {
-  transform: translateY(calc(var(--h) * 0.5)) rotateX(90deg) rotateZ(36deg);
-}
-
-/* ---------- Semilla ---------- */
 .seedWrap {
   position: absolute;
   left: 0;
   top: 0;
   width: 0;
   height: 0;
-  transform-style: preserve-3d;
-  animation: bob 5s ease-in-out infinite alternate;
 }
 
 .seed {
@@ -394,85 +432,79 @@ a {
   top: 0;
   width: 0;
   height: 0;
-  transform-style: preserve-3d;
-  animation: spin 18s linear infinite reverse;
 }
 
 .slice {
   position: absolute;
-  width: calc(var(--h) * 0.17);
-  height: calc(var(--h) * 0.28);
   left: calc(var(--h) * -0.085);
   top: calc(var(--h) * -0.14);
-  transform: rotateY(calc(var(--k) * 30deg));
+  width: calc(var(--h) * 0.17);
+  height: calc(var(--h) * 0.28);
   border-radius: 50% 50% 50% 50% / 72% 72% 28% 28%;
-  background: radial-gradient(
-    ellipse at 38% 30%,
-    #ffe3a0 0%,
-    #d79a45 32%,
-    #8a4d1b 68%,
-    #4b230a 100%
-  );
-  opacity: 0.62;
-  box-shadow: 0 0 calc(var(--h) * 0.05) rgba(255, 176, 70, 0.6);
+  transform: rotateY(calc(var(--slice) * 30deg));
+  background: var(--mercury-gradient);
+  opacity: 0.92;
+  box-shadow: inset calc(var(--h) * -0.012) 0 calc(var(--h) * 0.02)
+    rgba(35, 48, 62, 0.7);
 }
 
-@keyframes bob {
-  from {
-    transform: translateY(calc(var(--h) * 0.015)) rotateZ(-14deg);
-  }
-  to {
-    transform: translateY(calc(var(--h) * -0.015)) rotateZ(-8deg);
-  }
+.plumule {
+  position: absolute;
+  left: 0;
+  top: calc(var(--h) * -0.14);
+  width: 0;
+  height: 0;
 }
 
-/* ---------- Resplandor ---------- */
+.plumuleSprout {
+  position: absolute;
+  left: calc(var(--h) * -0.003);
+  top: calc(var(--h) * -0.032);
+  width: calc(var(--h) * 0.008);
+  height: calc(var(--h) * 0.036);
+  border-radius: 100% 100% 45% 45%;
+  background: var(--mercury-gradient);
+  transform: rotate(-7deg);
+}
+
 .glow {
   position: absolute;
   left: 50%;
   top: 50%;
   width: calc(var(--h) * 0.55);
   height: calc(var(--h) * 0.55);
+  border-radius: 50%;
   transform: translate(-50%, -50%);
   background: radial-gradient(
     circle,
-    rgba(255, 190, 90, 0.38),
-    rgba(255, 170, 90, 0.12) 40%,
+    rgba(223, 242, 255, 0.3),
+    rgba(173, 213, 255, 0.08) 40%,
     transparent 70%
   );
-  animation: pulse 4s ease-in-out infinite alternate;
 }
 
-@keyframes pulse {
-  from {
-    opacity: 0.6;
-    transform: translate(-50%, -50%) scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.12);
-  }
+.sparkles {
+  position: absolute;
+  inset: 0;
 }
 
-/* ---------- Destellos ---------- */
 .sparkle {
   position: absolute;
-  width: calc(var(--h) * 0.11 * var(--sc));
-  height: calc(var(--h) * 0.11 * var(--sc));
-  opacity: 0;
+  width: calc(var(--h) * 0.11 * var(--sparkle-scale));
+  height: calc(var(--h) * 0.11 * var(--sparkle-scale));
+  transform: translate(-50%, -50%);
   background: radial-gradient(
     closest-side,
-    rgba(255, 255, 255, 0.55),
-    rgba(255, 255, 255, 0) 100%
+    rgba(255, 255, 255, 0.45),
+    transparent
   );
-  animation: twinkle 3.6s ease-in-out infinite;
 }
 
 .sparkle::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #fff, #cfeaff);
+  background: #e8f7ff;
   clip-path: polygon(
     50% 0,
     60% 40%,
@@ -485,32 +517,10 @@ a {
   );
 }
 
-@keyframes twinkle {
-  0%,
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0) rotate(0deg);
-  }
-  50% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1) rotate(45deg);
-  }
-}
-
-/* ---------- Accesibilidad ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .scene,
-  .scene *,
-  .scene *::after {
-    animation: none !important;
-  }
-
-  .tilt {
+  .spin {
+    animation: none;
     transform: rotateX(-16deg) rotateZ(5deg);
-  }
-
-  .sparkle {
-    opacity: 0.8;
-    transform: translate(-50%, -50%);
+    will-change: auto;
   }
 }
