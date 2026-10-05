@@ -180,13 +180,13 @@ body {
 .who-we-are-copy {
   max-width: 100%;
   overflow-wrap: anywhere;
-  font-size: clamp(0.75rem, 3.4vw, 1rem);
+  font-size: clamp(0.82rem, 3.8vw, 1.1rem);
   line-height: 1.5;
 }
 
 .who-we-are-copy h2 {
   margin: 0 0 0.5rem;
-  font-size: clamp(1rem, 4.4vw, 1.5rem);
+  font-size: clamp(1.05rem, 4.6vw, 1.6rem);
   line-height: 1.2;
 }
 
@@ -197,6 +197,15 @@ body {
 @media (min-width: 640px) {
   .who-we-are-content {
     width: 78%;
+  }
+
+  .who-we-are-copy {
+    padding-inline: clamp(20px, 3vw, 40px);
+    font-size: clamp(1.2rem, 1.8vw, 1.4rem);
+  }
+
+  .who-we-are-copy h2 {
+    font-size: clamp(1.65rem, 3vw, 2rem);
   }
 }
 
@@ -258,12 +267,13 @@ body {
 
   .who-we-are-copy {
     min-width: 0;
-    font-size: clamp(0.72rem, 3.3vw, 0.9rem);
+    padding-inline: 8px;
+    font-size: clamp(1rem, 4.2vw, 1.2rem);
     line-height: 1.4;
   }
 
   .who-we-are-copy h2 {
-    font-size: clamp(0.95rem, 4vw, 1.25rem);
+    font-size: clamp(1.25rem, 5.4vw, 1.65rem);
   }
 
   .who-we-are-copy p + p {

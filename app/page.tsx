@@ -51,8 +51,8 @@ const quickPromptInfoSections = [
       <Image
         src="/yga-logo.png"
         alt="yGa"
-        width={240}
-        height={100}
+        width={340}
+        height={340}
         className="who-we-are-logo"
       />
     ),
@@ -64,10 +64,33 @@ const quickPromptInfoSections = [
     id: "who-we-are-3",
     marco: 2,
     layout: "vertical",
-    nodo: <CrystalSeed size={200} className="who-we-are-crystal" />,
-    titulo: "yGa",
+    nodo: <Image
+        src="/garantia.png"
+        alt="yGa"
+        width={340}
+        height={340}
+        className="who-we-are-logo"
+      />,
+    titulo: "Garantía de éxito",
     texto:
       "Cada proyecto es un desafío único. Cuénte con nuestra guía. Le ayudamos a simplificar toda complejidad en su negocio.",
+  },
+  {
+    id: "who-we-are-4",
+    marco: 2,
+    layout: "vertical",
+    nodo: (
+      <Image
+        src="/config.png"
+        alt="yGa"
+        width={340}
+        height={340}
+        className="who-we-are-logo"
+      />
+    ),
+    titulo: "yGa",
+    texto:
+      "Flexibilidad en ajustes. En el tiempo, identificamos mejoras, y lo ayudamos a concretarlas a tiempo.",
   },
 ];
 
